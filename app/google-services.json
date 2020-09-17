@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "859089146278",
+    "firebase_url": "https://normcore-f8817.firebaseio.com",
+    "project_id": "normcore-f8817",
+    "storage_bucket": "normcore-f8817.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:859089146278:android:57c1e988f4913ab34c7f67",
+        "android_client_info": {
+          "package_name": "com.pranav.normcore"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "859089146278-um0n75c4f5stjg17l1lmkri3rghff3kg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.pranav.normcore",
+            "certificate_hash": "4e1ba11c22c7a157506ca0ee304d65f8e645e98a"
+          }
+        },
+        {
+          "client_id": "859089146278-6udnnf3eb6d6f0b8ljbpbiul3hv1lkv6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQoLttBwhTvSYrwcXiElnz9fdguej4qro"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "859089146278-6udnnf3eb6d6f0b8ljbpbiul3hv1lkv6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
