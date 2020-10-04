@@ -4,15 +4,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
     tools:context=".Activities.InfluncerActivity">
 
     <LinearLayout
         android:id="@+id/linearLayout3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="8dp"
         android:layout_marginTop="16dp"
-        android:layout_marginEnd="16dp"
+        android:layout_marginEnd="8dp"
         android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -22,15 +23,38 @@
             android:id="@+id/buttonSelectFile"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_margin="2dp"
             android:layout_weight="1"
-            android:text="Select File" />
+            android:background="@drawable/layout_bg"
+            android:backgroundTint="@color/button_color"
+            android:fontFamily="@font/nunito_bold"
+            android:text="Select File"
+            android:textColor="@color/button_text" />
 
         <Button
             android:id="@+id/buttonUpload"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_margin="2dp"
             android:layout_weight="1"
-            android:text="Upload" />
+            android:background="@drawable/layout_bg"
+            android:backgroundTint="@color/button_color"
+            android:fontFamily="@font/nunito_bold"
+            android:text="Upload"
+            android:textColor="@color/button_text" />
+
+        <Button
+            android:id="@+id/buttonLogout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:background="@drawable/layout_bg"
+            android:backgroundTint="@color/button_color"
+            android:fontFamily="@font/nunito_bold"
+            android:text="Logout"
+            android:textColor="@color/button_text" />
+
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
@@ -55,4 +79,18 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/linearLayout3" />
+
+    <TextView
+        android:id="@+id/textViewNoDataInfluencer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="No Posts available"
+        android:textSize="30sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/recyclerViewInfluencer"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/recyclerViewInfluencer" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

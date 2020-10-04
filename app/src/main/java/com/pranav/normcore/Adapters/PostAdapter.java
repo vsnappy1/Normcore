@@ -1,12 +1,15 @@
 package com.pranav.normcore.Adapters;
 
 import android.content.Context;
+import android.net.Uri;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.MediaController;
 import android.widget.TextView;
+import android.widget.VideoView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,18 +26,42 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
 
     private ArrayList<Post> list;
     private Context context;
+    private static ClickListener clickListener;
 
-    static class MyViewHolder extends RecyclerView.ViewHolder {
+    public interface ClickListener {
+        void onItemClick(int position, View v);
+        void onLongClick(int position, View v);
+    }
+
+
+    static class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener, View.OnLongClickListener {
         TextView textViewName;
         TextView textViewTime;
         ImageView imageViewImage;
+        VideoView videoViewVideo;
 
         MyViewHolder(View view) {
             super(view);
+            view.setOnClickListener(this);
+            view.setOnLongClickListener(this);
+
 
             textViewName = view.findViewById(R.id.textViewPostItemName);
             textViewTime = view.findViewById(R.id.textViewPostItemTime);
             imageViewImage = view.findViewById(R.id.imageViewPostItemImage);
+            videoViewVideo = view.findViewById(R.id.videoViewPostItemVideo);
+        }
+
+        @Override
+        public boolean onLongClick(View view) {
+            clickListener.onLongClick(getAdapterPosition(),view);
+            return false;
+        }
+
+        @Override
+        public void onClick(View view) {
+            clickListener.onItemClick(getAdapterPosition(), view);
+
         }
     }
 
@@ -42,7 +69,9 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
         list = arrayList;
         this.context = context;
     }
-
+    public void setOnItemClickListener(ClickListener clickListener) {
+        PostAdapter.clickListener = clickListener;
+    }
 
     @NonNull
     @Override
@@ -63,12 +92,21 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.MyViewHolder> 
         String url = list.get(position).mediaUrl;
         boolean isImage = list.get(position).isImage;
         if(isImage){
+            myViewHolder.videoViewVideo.setVisibility(View.GONE);
             myViewHolder.imageViewImage.setVisibility(View.VISIBLE);
             fetchImage(url, myViewHolder.imageViewImage);
-            Log.i("hhha", "loading");
         }
         else {
-//           Video logic
+            myViewHolder.imageViewImage.setVisibility(View.GONE);
+            myViewHolder.videoViewVideo.setVisibility(View.VISIBLE);
+            Uri uri = Uri.parse(url);
+            myViewHolder.videoViewVideo.setVideoURI(uri);
+
+            MediaController mediaController = new MediaController(context);
+            mediaController.setAnchorView(myViewHolder.videoViewVideo);
+            myViewHolder.videoViewVideo.setMediaController(mediaController);
+
+            myViewHolder.videoViewVideo.start();
         }
     }
 

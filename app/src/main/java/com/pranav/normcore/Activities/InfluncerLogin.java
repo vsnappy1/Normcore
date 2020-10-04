@@ -4,6 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -22,6 +23,8 @@ import com.pranav.normcore.CustomClasses.Influncer;
 import com.pranav.normcore.MainActivity;
 import com.pranav.normcore.R;
 
+import static com.pranav.normcore.Activities.InfluncerActivity.MY_PREFS_NAME;
+
 public class InfluncerLogin extends AppCompatActivity {
     private static final String TAG = "TAKATAK";
 
@@ -29,7 +32,6 @@ public class InfluncerLogin extends AppCompatActivity {
     TextView textViewSignUp;
     Button buttonLogin;
     ProgressBar progressBar;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +60,32 @@ public class InfluncerLogin extends AppCompatActivity {
                 startActivity(new Intent(InfluncerLogin.this, InfluncerSignup.class));
             }
         });
+
+        SharedPreferences prefs = getSharedPreferences(MY_PREFS_NAME, MODE_PRIVATE);
+        if(prefs.contains("email")) {
+            //Check weather shared preference contains userName, is it contains then login
+            String email = prefs.getString("email", "");
+            String password = prefs.getString("password", "");
+
+            this.editTextEmail.setText(email);
+            this.editTextPassword.setText(password);
+
+            if (email != null ) {
+                userLogin(email,password);
+            }
+
+        }
+
+    }
+
+    void rememberLogin(){
+        // If user sign in successfully remember the email and password
+        String email = editTextEmail.getText().toString().trim();
+        String password = editTextPassword.getText().toString().trim();
+        SharedPreferences.Editor editor = getSharedPreferences(MY_PREFS_NAME, MODE_PRIVATE).edit();
+        editor.putString("email", email);
+        editor.putString("password", password);
+        editor.apply();
     }
 
     void userLogin(String email, String password){
@@ -74,6 +102,8 @@ public class InfluncerLogin extends AppCompatActivity {
                         if (task.isSuccessful()) {
                             // Sign in success, update UI with the signed-in user's information
                             Log.d(TAG, "signInWithEmail:success");
+                            rememberLogin();
+                            finish();
                             startActivity(new Intent(InfluncerLogin.this, InfluncerActivity.class));
 
 
