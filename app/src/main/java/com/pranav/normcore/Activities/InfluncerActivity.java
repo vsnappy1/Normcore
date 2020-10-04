@@ -8,26 +8,33 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.ContentResolver;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.FileUtils;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -44,15 +51,19 @@ import com.pranav.normcore.CustomClasses.Influncer;
 import com.pranav.normcore.CustomClasses.Post;
 import com.pranav.normcore.R;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.Objects;
 
 public class InfluncerActivity extends AppCompatActivity {
+    public static final String MY_PREFS_NAME = "TheScoutApp";
+
     private static final String TAG = "YOYO";
     private static int RESULT_LOAD_IMAGE = 1;
-    private static final int REQUEST_CODE = 97 ;
+    private static final int REQUEST_CODE = 97;
     private Uri filePath = null;
 
     RecyclerView recyclerView;
@@ -60,23 +71,31 @@ public class InfluncerActivity extends AppCompatActivity {
     PostAdapter adapter;
     ArrayList<Post> list;
     ProgressBar progressBar;
-    DatabaseReference mDatabase;
-    ValueEventListener valueEventListener;
+    TextView textView;
+
 
     Influncer influncer;
+    String influencerId = "";
+    FirebaseUser user;
 
-    Button buttonSelectMedia, buttonUpload;
+    Button buttonSelectMedia, buttonUpload, buttonLogout;
+    ArrayList<String> myPostIds, myPostIdsInfluencer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_influncer);
 
+        myPostIds = new ArrayList<>();
+        myPostIdsInfluencer = new ArrayList<>();
+
         getInfluencerDetails();
 
         buttonUpload = findViewById(R.id.buttonUpload);
         buttonSelectMedia = findViewById(R.id.buttonSelectFile);
+        buttonLogout = findViewById(R.id.buttonLogout);
         progressBar = findViewById(R.id.progressBarInfluencer);
+        textView = findViewById(R.id.textViewNoDataInfluencer);
 
         recyclerView = findViewById(R.id.recyclerViewInfluencer);
 
@@ -89,20 +108,32 @@ public class InfluncerActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
 
         adapter = new PostAdapter(this, list);
+        adapter.setOnItemClickListener(new PostAdapter.ClickListener() {
+            @Override
+            public void onItemClick(int position, View v) {
+
+            }
+
+            @Override
+            public void onLongClick(int position, View v) {
+                //Toast.makeText(InfluncerActivity.this, myPostIdsInfluencer.get(position), Toast.LENGTH_SHORT).show();
+                showDialogBox(position);
+            }
+        });
 
         recyclerView.setAdapter(adapter);
 
         buttonUpload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(filePath == null){
+
+                //Toast.makeText(InfluncerActivity.this, String.valueOf(checkIsImage(InfluncerActivity.this,filePath)), Toast.LENGTH_SHORT).show();
+                if (filePath == null) {
                     Toast.makeText(InfluncerActivity.this, "Please select a file first", Toast.LENGTH_SHORT).show();
-                }
-                else {
-                    if(influncer != null){
+                } else {
+                    if (influncer != null) {
                         sendImageToTheServer();
-                    }
-                    else {
+                    } else {
                         Toast.makeText(InfluncerActivity.this, "wait a minute", Toast.LENGTH_SHORT).show();
                     }
                 }
@@ -112,28 +143,69 @@ public class InfluncerActivity extends AppCompatActivity {
         buttonSelectMedia.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(isStoragePermissionGranted()) {
+                if (isStoragePermissionGranted()) {
                     selectMedia();
                 }
             }
         });
 
-        mDatabase = FirebaseDatabase.getInstance().getReference().child("newsFeed");
+        buttonLogout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                logOut();
+            }
+        });
 
-        valueEventListener = new ValueEventListener() {
+    }
+
+    void showDialogBox(final int position) {
+        DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case DialogInterface.BUTTON_POSITIVE:
+                        //Yes button clicked
+                        deletePost(position);
+                        break;
+
+                    case DialogInterface.BUTTON_NEGATIVE:
+                        //No button clicked
+                        break;
+                }
+            }
+        };
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Delete");
+        builder.setMessage("Are you sure?").setPositiveButton("Yes", dialogClickListener)
+                .setNegativeButton("No", dialogClickListener).show();
+    }
+
+    void getMyPostIds(String userId) {
+
+        DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference()
+                .child("Influencer")
+                .child(userId)
+                .child("myPost");
+
+        ValueEventListener valueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-
+                myPostIds.clear();
+                myPostIdsInfluencer.clear();
                 list.clear();
-                for(DataSnapshot ds: dataSnapshot.getChildren()){
-                    Map map = (Map) ds.getValue();
-                    if(map != null){
-                        Post post = getPost(map);
-                        list.add(post);
-                    }
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                    myPostIds.add(ds.getValue().toString());
+                    myPostIdsInfluencer.add(ds.getKey());
                 }
-                progressBar.setVisibility(View.GONE);
-                adapter.notifyDataSetChanged();
+
+                if (myPostIds.size() == 0) {
+                    textView.setVisibility(View.VISIBLE);
+                    progressBar.setVisibility(View.GONE);
+
+                }
+                fetchMyPosts(myPostIds);
+
             }
 
             @Override
@@ -143,19 +215,78 @@ public class InfluncerActivity extends AppCompatActivity {
         };
 
         mDatabase.addValueEventListener(valueEventListener);
+
     }
 
-    void getInfluencerDetails(){
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference().child("Influencer").child(user.getUid());
+    void deletePost(int position) {
+        //Delete post id from blogger account
+        FirebaseDatabase.getInstance().getReference()
+                .child("Influencer")
+                .child(user.getUid())
+                .child("myPost")
+                .child(myPostIdsInfluencer.get(position))
+                .removeValue();
+
+        // Delete the post
+        FirebaseDatabase.getInstance().getReference()
+                .child("newsFeed")
+                .child(myPostIds.get(position))
+                .removeValue();
+
+        //Get the reference of media and delete it
+        FirebaseStorage.getInstance().getReferenceFromUrl(list.get(position)
+                .mediaUrl)
+                .delete()
+        .addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                Toast.makeText(InfluncerActivity.this, "Deleted", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    void fetchMyPosts(ArrayList<String> ids) {
+
         ValueEventListener valueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.i("jjha", "called");
-                Map map = (Map) dataSnapshot.getValue();
-                Log.i("jjha", map.toString());
 
-                if(map != null){
+                Map map = (Map) dataSnapshot.getValue();
+                if (map != null) {
+                    Post post = getPost(map);
+                    list.add(post);
+                }
+                progressBar.setVisibility(View.GONE);
+                textView.setVisibility(View.GONE);
+                adapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        };
+
+        for (String id : ids) {
+            DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference().child("newsFeed").child(id);
+            mDatabase.addValueEventListener(valueEventListener);
+        }
+    }
+
+    void getInfluencerDetails() {
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            influencerId = user.getUid();
+        }
+        getMyPostIds(influencerId);
+
+        DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference().child("Influencer").child(influencerId);
+        ValueEventListener valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Map map = (Map) dataSnapshot.getValue();
+
+                if (map != null) {
                     influncer = getInfluencer(map);
 
                 }
@@ -177,7 +308,7 @@ public class InfluncerActivity extends AppCompatActivity {
         boolean isImage = (boolean) Objects.requireNonNull(map.get("isImage"));
         long time = (long) Objects.requireNonNull(map.get("time"));
 
-        return new Post(influncername,mediaUrl,time,isImage);
+        return new Post(influncername, mediaUrl, time, isImage);
     }
 
     private Influncer getInfluencer(Map map) {
@@ -188,10 +319,10 @@ public class InfluncerActivity extends AppCompatActivity {
         String email = Objects.requireNonNull(map.get("email")).toString();
         String contact = Objects.requireNonNull(map.get("contact")).toString();
 
-        return new Influncer(name,username,email,contact,instagramUsername);
+        return new Influncer(name, username, email, contact, instagramUsername);
     }
 
-    void selectMedia(){
+    void selectMedia() {
 //        Intent imagePicker = new Intent(
 //                Intent.ACTION_PICK,
 //                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
@@ -208,7 +339,7 @@ public class InfluncerActivity extends AppCompatActivity {
 
         if (requestCode == RESULT_LOAD_IMAGE && resultCode == RESULT_OK && null != data) {
             Uri selectedImage = data.getData();
-            String[] filePathColumn = { MediaStore.Images.Media.DATA };
+            String[] filePathColumn = {MediaStore.Images.Media.DATA};
 
             filePath = data.getData();
 
@@ -229,21 +360,20 @@ public class InfluncerActivity extends AppCompatActivity {
         }
     }
 
-    public  boolean isStoragePermissionGranted() {
+    public boolean isStoragePermissionGranted() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE)
                     == PackageManager.PERMISSION_GRANTED) {
-                Log.v(TAG,"Permission is granted");
+                Log.v(TAG, "Permission is granted");
                 return true;
             } else {
 
-                Log.v(TAG,"Permission is revoked");
+                Log.v(TAG, "Permission is revoked");
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, 1);
                 return false;
             }
-        }
-        else { //permission is automatically granted on sdk<23 upon installation
-            Log.v(TAG,"Permission is granted");
+        } else { //permission is automatically granted on sdk<23 upon installation
+            Log.v(TAG, "Permission is granted");
             return true;
         }
     }
@@ -257,7 +387,7 @@ public class InfluncerActivity extends AppCompatActivity {
         }
     }
 
-    private String getFileExtension(Uri uri){
+    private String getFileExtension(Uri uri) {
 
         ContentResolver contentResolver = getContentResolver();
         MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
@@ -267,14 +397,13 @@ public class InfluncerActivity extends AppCompatActivity {
 
     private void sendImageToTheServer() {
 
-        if(filePath != null)
-        {
+        if (filePath != null) {
             final ProgressDialog progressDialog = new ProgressDialog(this);
             progressDialog.setTitle("Progress...");
             progressDialog.show();
 
 
-            final StorageReference ref = FirebaseStorage.getInstance().getReference("newsFeed").child(System.currentTimeMillis()+"."+getFileExtension(filePath));
+            final StorageReference ref = FirebaseStorage.getInstance().getReference("newsFeed").child(System.currentTimeMillis() + "." + getFileExtension(filePath));
 
             ref.putFile(filePath)
                     .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
@@ -288,8 +417,10 @@ public class InfluncerActivity extends AppCompatActivity {
                                     String url = uri.toString();
                                     long time = Calendar.getInstance().getTime().getTime();
 
-                                    Post post = new Post(influncer.name, url,time, isImageFile(filePath.toString()));
+                                    Post post = new Post(influncer.username, url, time, checkIsImage(InfluncerActivity.this, filePath));
                                     uploadNewsFeedToDB(post);
+                                    filePath = null;
+
 
                                 }
                             });
@@ -299,46 +430,108 @@ public class InfluncerActivity extends AppCompatActivity {
                         @Override
                         public void onFailure(@NonNull Exception e) {
                             progressDialog.dismiss();
-                            Toast.makeText(InfluncerActivity.this, "Failed "+e.getMessage(), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(InfluncerActivity.this, "Failed " + e.getMessage(), Toast.LENGTH_SHORT).show();
                         }
                     })
                     .addOnProgressListener(new OnProgressListener<UploadTask.TaskSnapshot>() {
                         @Override
                         public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
-                            double progress = (100.0*taskSnapshot.getBytesTransferred()/taskSnapshot
+                            double progress = (100.0 * taskSnapshot.getBytesTransferred() / taskSnapshot
                                     .getTotalByteCount());
-                            progressDialog.setMessage("Uploaded "+(int)progress+"%");
+                            progressDialog.setMessage("Uploaded " + (int) progress + "%");
                         }
                     });
         }
     }
 
-    private void uploadNewsFeedToDB(Post post) {
-        long time = Calendar.getInstance().getTime().getTime();
+    void addPostIdInInfluencer(String id) {
+        FirebaseDatabase.getInstance().getReference()
+                .child("Influencer")
+                .child(influencerId)
+                .child("myPost")
+                .push()
+                .setValue(id);
 
-        DatabaseReference messageRef = FirebaseDatabase.getInstance().getReference().child("newsFeed");
-        messageRef.push().setValue(post, new DatabaseReference.CompletionListener() {
+    }
+
+    private void uploadNewsFeedToDB(Post post) {
+
+        DatabaseReference newsFeed = FirebaseDatabase.getInstance().getReference().child("newsFeed");
+        final String id = newsFeed.push().getKey();
+        newsFeed.child(id).setValue(post, new DatabaseReference.CompletionListener() {
             @Override
             public void onComplete(@Nullable DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
-                if(databaseError == null){
+                if (databaseError == null) {
                     Toast.makeText(InfluncerActivity.this, "Uploading Done", Toast.LENGTH_SHORT).show();
-                }
-                else {
+                    addPostIdInInfluencer(id);
+                } else {
                     Toast.makeText(InfluncerActivity.this, "Some error occurred", Toast.LENGTH_SHORT).show();
                 }
             }
         });
     }
-    public static boolean isImageFile(String path) {
-        BitmapFactory.Options options = new BitmapFactory.Options();
-        options.inJustDecodeBounds = true;
-        Bitmap bitmap = BitmapFactory.decodeFile(path, options);
 
-        if (options.outWidth != -1 && options.outHeight != -1) {
-            return true;
+    public static boolean checkIsImage(Context context, Uri uri) {
+        ContentResolver contentResolver = context.getContentResolver();
+        String type = contentResolver.getType(uri);
+        if (type != null) {
+            return type.startsWith("image/");
+        } else {
+            // try to decode as image (bounds only)
+            InputStream inputStream = null;
+            try {
+                inputStream = contentResolver.openInputStream(uri);
+                if (inputStream != null) {
+                    BitmapFactory.Options options = new BitmapFactory.Options();
+                    options.inJustDecodeBounds = true;
+                    BitmapFactory.decodeStream(inputStream, null, options);
+                    return options.outWidth > 0 && options.outHeight > 0;
+                }
+            } catch (IOException e) {
+                // ignore
+            } finally {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    FileUtils.closeQuietly(inputStream);
+                }
+            }
         }
-        else {
-            return false;
-        }
+        // default outcome if image not confirmed
+        return false;
+    }
+
+
+    void logOut(){
+        //Remove the saved email and password also make the googleSignIn false cause we have signed out
+        SharedPreferences.Editor editor = getSharedPreferences(MY_PREFS_NAME, MODE_PRIVATE).edit();
+        editor.remove("email");
+        editor.remove("password");
+        editor.putBoolean("googleSignIn",false);
+        editor.apply();
+        finish();
+    }
+    @Override
+    public void onBackPressed() {
+
+
+        DialogInterface.OnClickListener dialogClickListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+                    case DialogInterface.BUTTON_POSITIVE:
+                        //Yes button clicked
+                        finish();
+                        break;
+
+                    case DialogInterface.BUTTON_NEGATIVE:
+                        //No button clicked
+                        break;
+                }
+            }
+        };
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Exit");
+        builder.setMessage("Are you sure?").setPositiveButton("Yes", dialogClickListener)
+                .setNegativeButton("No", dialogClickListener).show();
     }
 }

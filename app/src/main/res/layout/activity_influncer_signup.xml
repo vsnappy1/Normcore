@@ -4,7 +4,23 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/white"
     tools:context=".Activities.InfluncerSignup">
+
+    <TextView
+        android:id="@+id/textView8"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#87479d"
+        android:fontFamily="@font/nunito_bold"
+        android:padding="8dp"
+        android:text="SIGNUP"
+        android:textColor="@android:color/white"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -16,68 +32,109 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@+id/textView8">
 
         <EditText
             android:id="@+id/editTextName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:background="@drawable/layout_bg"
+            android:backgroundTint="#EDEDED"
             android:ems="10"
+            android:fontFamily="@font/nunito"
             android:hint="Name"
             android:inputType="textPersonName"
-            android:padding="16dp" />
+            android:padding="16dp"
+            android:textColor="@android:color/black"
+            android:textColorHint="@color/button_text" />
 
         <EditText
             android:id="@+id/editTextUsername"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:background="@drawable/layout_bg"
+            android:backgroundTint="#EDEDED"
             android:ems="10"
+            android:fontFamily="@font/nunito"
             android:hint="Username"
             android:inputType="textPersonName"
-            android:padding="16dp" />
+            android:padding="16dp"
+            android:textColor="@android:color/black"
+            android:textColorHint="@color/button_text" />
 
         <EditText
             android:id="@+id/editTextInstagramUsername"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:background="@drawable/layout_bg"
+            android:backgroundTint="#EDEDED"
             android:ems="10"
+            android:fontFamily="@font/nunito"
             android:hint="Instagram Username"
             android:inputType="textPersonName"
-            android:padding="16dp" />
+            android:padding="16dp"
+            android:textColor="@android:color/black"
+            android:textColorHint="@color/button_text" />
 
         <EditText
             android:id="@+id/editTextContact"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:background="@drawable/layout_bg"
+            android:backgroundTint="#EDEDED"
             android:ems="10"
+            android:fontFamily="@font/nunito"
             android:hint="Contact#"
             android:inputType="number"
-            android:padding="16dp" />
+            android:padding="16dp"
+            android:textColor="@android:color/black"
+            android:textColorHint="@color/button_text" />
 
         <EditText
             android:id="@+id/editTextEmail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:background="@drawable/layout_bg"
+            android:backgroundTint="#EDEDED"
             android:ems="10"
+            android:fontFamily="@font/nunito"
             android:hint="Email"
             android:inputType="textWebEmailAddress|textPersonName"
-            android:padding="16dp" />
+            android:padding="16dp"
+            android:textColor="@android:color/black"
+            android:textColorHint="@color/button_text" />
 
         <EditText
             android:id="@+id/editTextPassword"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:background="@drawable/layout_bg"
+            android:backgroundTint="#EDEDED"
             android:ems="10"
+            android:fontFamily="@font/nunito"
             android:hint="Password"
             android:inputType="textPersonName|textPassword"
             android:padding="16dp"
-            android:password="false" />
+            android:password="false"
+            android:textColor="@android:color/black"
+            android:textColorHint="@color/button_text" />
 
         <Button
             android:id="@+id/buttonRegister"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Register" />
+            android:layout_margin="2dp"
+            android:background="@drawable/layout_bg"
+            android:backgroundTint="@color/button_color"
+            android:fontFamily="@font/nunito_bold"
+            android:text="Register"
+            android:textColor="@color/button_text" />
     </LinearLayout>
 
     <ProgressBar

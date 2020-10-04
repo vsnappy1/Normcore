@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="preloaded_fonts" translatable="false">
+        <item>@font/almendra_display</item>
+        <item>@font/croissant_one</item>
+        <item>@font/damion</item>
+        <item>@font/junge</item>
+        <item>@font/kavoon</item>
+        <item>@font/nunito</item>
+        <item>@font/nunito_bold</item>
+        <item>@font/nunito_light</item>
+        <item>@font/pacifico</item>
+        <item>@font/paprika</item>
+        <item>@font/rum_raisin</item>
+        <item>@font/uncial_antiqua</item>
+    </array>
+</resources>
